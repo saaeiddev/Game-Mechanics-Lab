@@ -1,2 +1,26 @@
-import {defineConfig} from '@playwright/test';
-export default defineConfig({testDir:'./e2e',timeout:30000,workers:1,use:{baseURL:'http://127.0.0.1:5173/Game-Mechanics-Lab/',headless:true,launchOptions:{executablePath:process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH||undefined,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']}},webServer:{command:'npm run dev -- --host 127.0.0.1',url:'http://127.0.0.1:5173/Game-Mechanics-Lab/',reuseExistingServer:false,timeout:30000}});
+import { defineConfig } from "@playwright/test";
+export default defineConfig({
+  testDir: "./e2e",
+  timeout: 30000,
+  workers: 1,
+  use: {
+    baseURL: "http://127.0.0.1:5173/Game-Mechanics-Lab/",
+    headless: true,
+    launchOptions: {
+      executablePath:
+        process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+      args: [
+        "--no-sandbox",
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "--enable-unsafe-swiftshader",
+      ],
+    },
+  },
+  webServer: {
+    command: "npm run dev -- --host 127.0.0.1",
+    url: "http://127.0.0.1:5173/Game-Mechanics-Lab/",
+    reuseExistingServer: false,
+    timeout: 30000,
+  },
+});
