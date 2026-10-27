@@ -200,3 +200,42 @@ test("saving a running physics scene preserves actual body positions", async ({
   );
   expect(saved.objects.at(-1).y).toBeLessThan(4);
 });
+test("NPC patrol routes are editable and camera drag changes its orientation", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "NPC intelligence" })
+    .click();
+  await page.getByLabel("Waypoint 1 X").fill("-4");
+  await page.getByRole("button", { name: "SAVE SCENE" }).click();
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("gml-scene-v1")!).waypoints[0][0],
+    ),
+  ).toBe(-4);
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Camera systems" })
+    .click();
+  await page.getByLabel("Camera mode").selectOption("first");
+  await expect(page.locator(".console")).toContainText("ROTATION", {
+    timeout: 5000,
+  });
+  const before = await page.locator(".console").innerText();
+  const canvas = page.locator("canvas");
+  const box = await canvas.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    box!.x + box!.width / 2 + 70,
+    box!.y + box!.height / 2 + 40,
+    { steps: 6 },
+  );
+  await page.mouse.up();
+  await expect
+    .poll(() => page.locator(".console").innerText(), { timeout: 4000 })
+    .not.toBe(before);
+});
