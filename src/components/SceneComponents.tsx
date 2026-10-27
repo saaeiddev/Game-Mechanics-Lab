@@ -218,7 +218,7 @@ export function Entity({
                 cfg.launchSpeed * Math.sin((cfg.launchAngle * Math.PI) / 180),
                 -cfg.launchSpeed * Math.cos((cfg.launchAngle * Math.PI) / 180),
               ]
-            : [0, 0, 0]
+            : [cfg.initialX, cfg.initialY, cfg.initialZ]
         }
         onCollisionEnter={({ manifold }) => {
           if (selected) {
@@ -281,15 +281,18 @@ export function Player({
   const visual = useRef<THREE.Group>(null);
   const { world, rapier } = useRapier();
   const { camera, gl } = useThree();
-  const yaw = useRef(0);
+  const yaw = useRef(0),
+    pitch = useRef(0);
   useEffect(() => {
     const canvas = gl.domElement;
     let dragging = false,
-      last = 0;
+      last = 0,
+      lastY = 0;
     const down = (e: PointerEvent) => {
       if (mode === "camera" && cfg.camera !== "orbit") {
         dragging = true;
         last = e.clientX;
+        lastY = e.clientY;
         canvas.setPointerCapture(e.pointerId);
       }
     };
@@ -297,6 +300,12 @@ export function Player({
       if (dragging) {
         yaw.current -= (e.clientX - last) * 0.004 * cfg.sensitivity;
         last = e.clientX;
+        pitch.current = THREE.MathUtils.clamp(
+          pitch.current - (e.clientY - lastY) * 0.004 * cfg.sensitivity,
+          -0.9,
+          0.9,
+        );
+        lastY = e.clientY;
       }
     };
     const up = () => {
@@ -415,28 +424,49 @@ export function Player({
       const desired =
         cfg.camera === "first"
           ? new THREE.Vector3(
-              p.x - Math.sin(yaw.current) * 0.5,
+              p.x + cfg.offsetX - Math.sin(yaw.current) * 0.5,
               p.y + 0.8,
-              p.z - Math.cos(yaw.current) * 0.5,
+              p.z + cfg.offsetZ - Math.cos(yaw.current) * 0.5,
             )
           : cfg.camera === "top"
-            ? new THREE.Vector3(p.x, p.y + cfg.distance, p.z + 0.01)
+            ? new THREE.Vector3(
+                p.x + cfg.offsetX,
+                p.y + cfg.distance,
+                p.z + cfg.offsetZ + 0.01,
+              )
             : cfg.camera === "isometric"
               ? new THREE.Vector3(
-                  p.x + cfg.distance,
+                  p.x + cfg.offsetX + cfg.distance,
                   p.y + cfg.height + 4,
-                  p.z + cfg.distance,
+                  p.z + cfg.offsetZ + cfg.distance,
                 )
               : new THREE.Vector3(
-                  p.x + Math.sin(yaw.current) * cfg.distance,
-                  p.y + cfg.height,
-                  p.z + Math.cos(yaw.current) * cfg.distance,
+                  p.x +
+                    cfg.offsetX +
+                    Math.sin(yaw.current) *
+                      cfg.distance *
+                      Math.cos(pitch.current),
+                  p.y + cfg.height + Math.sin(pitch.current) * cfg.distance,
+                  p.z +
+                    cfg.offsetZ +
+                    Math.cos(yaw.current) *
+                      cfg.distance *
+                      Math.cos(pitch.current),
                 );
       camera.position.lerp(desired, 1 - Math.exp(-cfg.follow * delta));
       camera.lookAt(
-        p.x - (cfg.camera === "first" ? Math.sin(yaw.current) * 5 : 0),
-        p.y + 0.3,
-        p.z - (cfg.camera === "first" ? Math.cos(yaw.current) * 5 : 0),
+        p.x +
+          cfg.offsetX -
+          (cfg.camera === "first"
+            ? Math.sin(yaw.current) * 5 * Math.cos(pitch.current)
+            : 0),
+        p.y +
+          (cfg.camera === "first" ? 0.8 + Math.sin(pitch.current) * 5 : 0.3),
+        p.z +
+          cfg.offsetZ -
+          (cfg.camera === "first"
+            ? Math.cos(yaw.current) * 5 * Math.cos(pitch.current)
+            : 0),
       );
       if (
         camera instanceof THREE.PerspectiveCamera &&
