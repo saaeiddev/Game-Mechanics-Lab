@@ -16,6 +16,9 @@ export type Config = {
   launchSpeed: number;
   launchAngle: number;
   spawnHeight: number;
+  initialX: number;
+  initialY: number;
+  initialZ: number;
   impulse: number;
   speed: number;
   sprint: number;
@@ -38,6 +41,8 @@ export type Config = {
   height: number;
   follow: number;
   sensitivity: number;
+  offsetX: number;
+  offsetZ: number;
   near: number;
   far: number;
   turn: number;
