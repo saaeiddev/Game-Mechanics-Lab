@@ -9,4 +9,4 @@ export function pathfind(start:Point,end:Point,obs:Obstacle[]):Point[]{
  if(!found)return [];const out:Point[]=[];for(let k=found;k!==key(s);){const [x,z]=k.split(',').map(Number);out.unshift({x,z});const p=prev.get(k);if(!p)return [];k=p}return out;
 }
 export type State='idle'|'patrol'|'chase'|'flee'|'search'|'return';
-export function nextState(state:State,visible:boolean,distance:number,searchTime:number):State{if(visible&&distance<1.2)return 'flee';if(visible)return 'chase';if(state==='chase'||state==='flee')return 'search';if(state==='search'&&searchTime<3)return 'search';if(state==='search')return 'return';return state==='idle'?'patrol':state}
+export function nextState(state:State,visible:boolean,distance:number,searchTime:number,searchDuration=3):State{if(visible&&distance<1.2)return 'flee';if(visible)return 'chase';if(state==='chase'||state==='flee')return 'search';if(state==='search'&&searchTime<searchDuration)return 'search';if(state==='search')return 'return';return state==='idle'?'patrol':state}
