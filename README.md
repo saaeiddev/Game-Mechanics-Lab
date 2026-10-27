@@ -1,6 +1,6 @@
 # Game Mechanics Lab
 
-A browser-based 3D playground for interactive game mechanics, made with React, TypeScript, Vite, Three.js, React Three Fiber and Rapier.
+A browser-based 3D playground for interactive game mechanics, made with React, TypeScript, Vite, Three.js, React Three Fiber, Rapier, Zustand, Tailwind CSS and Motion.
 
 ## Features
 
@@ -31,7 +31,7 @@ Move with WASD, jump with Space and sprint with Shift. Drag the viewport to orbi
 
 ## Current limitations
 
-The experiments are scenario variants built on a shared simulation engine. NPC pathfinding uses a grid and axis-aligned approximations for obstacles. Touch controls and transform gizmos have been tested in a simulated mobile/desktop browser but still need testing on physical devices. The automated tests cover core flows but are not exhaustive, and some advanced controls and visualizations in the original specification are not yet available.
+The experiments are scenario variants built on a shared simulation engine. NPC pathfinding uses a grid and axis-aligned approximations for fixed obstacles; moving obstacles are not included in the navigation grid. Collision markers and velocity trails are shown for the selected body. Touch controls and transform gizmos have been tested in simulated mobile/desktop browsers, but not on physical devices. Automated tests cover core flows but are not exhaustive.
 
 ## Deployment
 
