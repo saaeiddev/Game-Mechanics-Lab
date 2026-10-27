@@ -1,10 +1,202 @@
-import {test,expect} from '@playwright/test';
-test('navigates and changes live physics',async({page})=>{const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('./');await expect(page.locator('canvas')).toBeVisible();await page.locator('.navlist button').filter({hasText:'Physics sandbox'}).click();await page.getByRole('button',{name:'SPHERE'}).first().click();await expect(page.locator('.viewport-bottom')).toContainText('OBJECTS 03');await page.getByRole('button',{name:'Moon gravity'}).click();await expect(page.locator('.bottom')).toContainText('-1.62');for(const n of ['NPC intelligence','Camera systems','Level editor','Experiments']){await page.locator('.navlist button').filter({hasText:n}).click();await expect(page.locator('canvas')).toBeVisible()}expect(errors).toEqual([])});
-test('character moves and jumps',async({page})=>{await page.goto('./');await page.locator('.navlist button').filter({hasText:'Character controller'}).click();await expect(page.locator('.console')).toContainText('GROUNDED',{timeout:10000});await page.keyboard.press('Space');await expect(page.locator('.console')).toContainText('AIRBORNE',{timeout:2000});await page.keyboard.down('w');await page.waitForTimeout(800);await page.keyboard.up('w');await expect(page.locator('.console')).not.toContainText('z 5.0');});
-test('scene save and JSON import/export',async({page})=>{await page.goto('./');await page.locator('.navlist button').filter({hasText:'Level editor'}).click();await page.getByRole('button',{name:'CUBE'}).first().click();await expect(page.locator('.inspector')).toContainText('SELECTED OBJECT');await page.getByLabel('Object mass').fill('2');await page.getByRole('button',{name:'SAVE',exact:true}).click();expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('gml-scene-v1')!).objects.at(-1).mass)).toBe(2);await expect(page.locator('.console')).toContainText('Scene saved');const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'EXPORT',exact:true}).click();const download=await downloadPromise;const path=await download.path();expect(path).toBeTruthy();await page.getByRole('button',{name:'DELETE',exact:true}).click();await page.locator('input[type=file]').setInputFiles(path!);await expect(page.locator('.console')).toContainText('Scene imported');await expect(page.locator('.viewport-bottom')).toContainText('OBJECTS 03')});
-test('mobile layout exposes touch controls',async({browser})=>{const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true});const page=await context.newPage();await page.goto('./');await page.locator('.navlist button').filter({hasText:'Character controller'}).click();await expect(page.locator('.touchpad button').first()).toBeVisible();await expect(page.locator('canvas')).toBeVisible();await context.close()});
-test('NPC detects a moving target and camera modes switch',async({page})=>{const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('./');await page.locator('.navlist button').filter({hasText:'NPC intelligence'}).click();await page.getByLabel('Detection radius').fill('12');await page.getByLabel('Field of view').fill('360');await page.keyboard.down('w');await page.waitForTimeout(1800);await page.keyboard.up('w');await expect(page.locator('.console')).toContainText('CHASE',{timeout:6000});await page.locator('.navlist button').filter({hasText:'Camera systems'}).click();for(const mode of ['first','third','top','isometric','orbit']){await page.getByLabel('Camera mode').selectOption(mode);await expect(page.locator('canvas')).toBeVisible()}expect(errors).toEqual([])});
-test('help and rendering settings are usable',async({page})=>{await page.goto('./');await page.getByLabel('Help',{exact:true}).click();await expect(page.getByRole('dialog')).toContainText('WASD');await page.getByLabel('Close dialog').click();await page.getByLabel('Settings',{exact:true}).click();await page.getByRole('dialog').locator('select').selectOption('low');await expect(page.getByRole('dialog').locator('select')).toHaveValue('low');await page.getByLabel('Close dialog').click()});
-test('3D translate gizmo updates and saves the selected transform',async({page})=>{await page.setViewportSize({width:1440,height:900});await page.goto('./');await page.locator('.navlist button').filter({hasText:'Level editor'}).click();await page.getByRole('button',{name:'CUBE'}).first().click();const fields=page.locator('.editor-fields input');await fields.nth(0).fill('0');await fields.nth(1).fill('1');await fields.nth(2).fill('0');await page.waitForTimeout(500);await page.mouse.move(685,435);await page.mouse.down();await page.mouse.move(685,390,{steps:10});await page.mouse.up();await expect.poll(async()=>Number(await fields.nth(1).inputValue())).toBeGreaterThan(1.1);await page.getByRole('button',{name:'SAVE',exact:true}).click();const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('gml-scene-v1')!));expect(saved.objects.at(-1).y).toBeGreaterThan(1.1)});
+import { test, expect } from "@playwright/test";
+test("navigates and changes live physics", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./");
+  await expect(page.locator("canvas")).toBeVisible();
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Physics sandbox" })
+    .click();
+  await page.getByRole("button", { name: "SPHERE" }).first().click();
+  await expect(page.locator(".viewport-bottom")).toContainText("OBJECTS 03");
+  await page.getByText("COLLISION MARKERS").click();
+  await page.getByRole("button", { name: "APPLY IMPULSE" }).click();
+  await expect(page.locator(".console")).toContainText("IMPULSE APPLIED");
+  await page.getByRole("button", { name: "Moon gravity" }).click();
+  await expect(page.locator(".bottom")).toContainText("-1.62");
+  for (const n of [
+    "NPC intelligence",
+    "Camera systems",
+    "Level editor",
+    "Experiments",
+  ]) {
+    await page.locator(".navlist button").filter({ hasText: n }).click();
+    await expect(page.locator("canvas")).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+test("character moves and jumps", async ({ page }) => {
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Character controller" })
+    .click();
+  await expect(page.locator(".console")).toContainText("GROUNDED", {
+    timeout: 10000,
+  });
+  await page.keyboard.press("Space");
+  await expect(page.locator(".console")).toContainText("AIRBORNE", {
+    timeout: 2000,
+  });
+  await page.keyboard.down("w");
+  await page.waitForTimeout(800);
+  await page.keyboard.up("w");
+  await expect(page.locator(".console")).not.toContainText("z 5.0");
+});
+test("scene save and JSON import/export", async ({ page }) => {
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Level editor" })
+    .click();
+  await page.getByRole("button", { name: "CUBE" }).first().click();
+  await expect(page.locator(".inspector")).toContainText("SELECTED OBJECT");
+  await page.getByLabel("Object mass").fill("2");
+  await page.getByRole("button", { name: "SAVE", exact: true }).click();
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("gml-scene-v1")!).objects.at(-1).mass,
+    ),
+  ).toBe(2);
+  await expect(page.locator(".console")).toContainText("Scene saved");
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "EXPORT", exact: true }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  expect(path).toBeTruthy();
+  await page.getByRole("button", { name: "DELETE", exact: true }).click();
+  await page.locator("input[type=file]").setInputFiles(path!);
+  await expect(page.locator(".console")).toContainText("Scene imported");
+  await expect(page.locator(".viewport-bottom")).toContainText("OBJECTS 03");
+});
+test("mobile layout exposes touch controls", async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Character controller" })
+    .click();
+  await expect(page.locator(".touchpad button").first()).toBeVisible();
+  await expect(page.locator("canvas")).toBeVisible();
+  await context.close();
+});
+test("NPC detects a moving target and camera modes switch", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "NPC intelligence" })
+    .click();
+  await page.getByLabel("Detection radius").fill("12");
+  await page.getByLabel("Field of view").fill("360");
+  await page.keyboard.down("w");
+  await page.waitForTimeout(1800);
+  await page.keyboard.up("w");
+  await expect(page.locator(".console")).toContainText("CHASE", {
+    timeout: 6000,
+  });
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Camera systems" })
+    .click();
+  for (const mode of ["first", "third", "top", "isometric", "orbit"]) {
+    await page.getByLabel("Camera mode").selectOption(mode);
+    await expect(page.locator("canvas")).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});
+test("help and rendering settings are usable", async ({ page }) => {
+  await page.goto("./");
+  await page.getByLabel("Help", { exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("WASD");
+  await page.getByLabel("Close dialog").click();
+  await page.getByLabel("Settings", { exact: true }).click();
+  await page.getByRole("dialog").locator("select").selectOption("low");
+  await expect(page.getByRole("dialog").locator("select")).toHaveValue("low");
+  await page.getByLabel("Close dialog").click();
+});
+test("3D translate gizmo updates and saves the selected transform", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Level editor" })
+    .click();
+  await page.getByRole("button", { name: "CUBE" }).first().click();
+  const fields = page.locator(".editor-fields input");
+  await fields.nth(0).fill("0");
+  await fields.nth(1).fill("1");
+  await fields.nth(2).fill("0");
+  await page.waitForTimeout(500);
+  await page.mouse.move(685, 435);
+  await page.mouse.down();
+  await page.mouse.move(685, 390, { steps: 10 });
+  await page.mouse.up();
+  await expect
+    .poll(async () => Number(await fields.nth(1).inputValue()))
+    .toBeGreaterThan(1.1);
+  await page.getByRole("button", { name: "SAVE", exact: true }).click();
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("gml-scene-v1")!),
+  );
+  expect(saved.objects.at(-1).y).toBeGreaterThan(1.1);
+});
 
-test('all six experiments display a live interactive scene',async({page})=>{const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('./');await page.locator('.navlist button').filter({hasText:'Experiments'}).click();for(const name of ['Gravity','Jump','Collision','NPC detection','Camera movement','Projectile']){await page.locator('.workspace .chips button').filter({hasText:name}).click();await expect(page.locator('canvas')).toBeVisible();await expect(page.locator('.inspector')).toContainText('ABOUT THIS EXPERIMENT')}expect(errors).toEqual([])});
+test("all six experiments display a live interactive scene", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Experiments" })
+    .click();
+  for (const name of [
+    "Gravity",
+    "Jump",
+    "Collision",
+    "NPC detection",
+    "Camera movement",
+    "Projectile",
+  ]) {
+    await page
+      .locator(".workspace .chips button")
+      .filter({ hasText: name })
+      .click();
+    await expect(page.locator("canvas")).toBeVisible();
+    await expect(page.locator(".inspector")).toContainText(
+      "ABOUT THIS EXPERIMENT",
+    );
+  }
+  expect(errors).toEqual([]);
+});
+
+test("saving a running physics scene preserves actual body positions", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page
+    .locator(".navlist button")
+    .filter({ hasText: "Physics sandbox" })
+    .click();
+  await page.getByRole("button", { name: "SPHERE" }).first().click();
+  await page.waitForTimeout(1000);
+  await page.getByRole("button", { name: "SAVE SCENE" }).click();
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("gml-scene-v1")!),
+  );
+  expect(saved.objects.at(-1).y).toBeLessThan(4);
+});
