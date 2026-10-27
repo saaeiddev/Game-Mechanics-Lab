@@ -32,6 +32,9 @@ const initial: Config = {
   launchSpeed: 11,
   launchAngle: 20,
   spawnHeight: 5,
+  initialX: 0,
+  initialY: 0,
+  initialZ: 0,
   impulse: 5,
   speed: 4,
   sprint: 7,
@@ -54,6 +57,8 @@ const initial: Config = {
   height: 5,
   follow: 5,
   sensitivity: 1,
+  offsetX: 0,
+  offsetZ: 0,
   near: 0.1,
   far: 100,
   turn: 10,
@@ -252,6 +257,9 @@ function validSettings(value: unknown): value is Config {
     launchSpeed: [1, 25],
     launchAngle: [0, 80],
     spawnHeight: [1, 15],
+    initialX: [-20, 20],
+    initialY: [-20, 20],
+    initialZ: [-20, 20],
     impulse: [0, 30],
     speed: [1, 10],
     sprint: [1, 15],
@@ -272,6 +280,8 @@ function validSettings(value: unknown): value is Config {
     height: [1, 12],
     follow: [1, 15],
     sensitivity: [0.1, 3],
+    offsetX: [-5, 5],
+    offsetZ: [-5, 5],
     near: [0.01, 5],
     far: [20, 100],
     turn: [1, 25],
@@ -289,6 +299,65 @@ function validSettings(value: unknown): value is Config {
     ["orbit", "first", "third", "top", "isometric"].includes(
       data.camera as string,
     )
+  );
+}
+function WaypointEditor({
+  scene,
+  commit,
+}: {
+  scene: SceneData;
+  commit: (scene: SceneData) => void;
+}) {
+  return (
+    <>
+      <div className="rule" />
+      <label>
+        PATROL WAYPOINTS <span>{scene.waypoints.length}</span>
+      </label>
+      {scene.waypoints.map((wp, i) => (
+        <div className="waypoint" key={i}>
+          <span>POINT {i + 1}</span>
+          {([0, 1] as const).map((axis) => (
+            <input
+              key={axis}
+              aria-label={`Waypoint ${i + 1} ${axis ? "Z" : "X"}`}
+              type="number"
+              step="0.5"
+              value={wp[axis]}
+              onChange={(e) => {
+                const n = e.target.valueAsNumber;
+                if (Number.isFinite(n)) {
+                  const w = scene.waypoints.map(
+                    (v) => [...v] as [number, number],
+                  );
+                  w[i][axis] = n;
+                  commit({ ...scene, waypoints: w });
+                }
+              }}
+            />
+          ))}
+          <button
+            disabled={scene.waypoints.length <= 2}
+            onClick={() =>
+              commit({
+                ...scene,
+                waypoints: scene.waypoints.filter((_, j) => j !== i),
+              })
+            }
+          >
+            ×
+          </button>
+        </div>
+      ))}
+      <button
+        className="secondary"
+        onClick={() =>
+          commit({ ...scene, waypoints: [...scene.waypoints, [0, 0]] })
+        }
+      >
+        ADD WAYPOINT +
+      </button>
+    </>
   );
 }
 class ViewportBoundary extends React.Component<
@@ -1042,6 +1111,21 @@ function App() {
                 set={(v) => config("spawnHeight", v)}
                 unit="m"
               />
+              {(["X", "Y", "Z"] as const).map((axis) => (
+                <Control
+                  key={axis}
+                  title={`Initial velocity ${axis}`}
+                  value={cfg[`initial${axis}`]}
+                  min={-20}
+                  max={20}
+                  set={(v) => config(`initial${axis}`, v)}
+                  unit="m/s"
+                />
+              ))}
+              <p className="hint">
+                Initial velocity changes apply to newly created objects or after
+                reset.
+              </p>
               <Control
                 title="Launch speed"
                 value={cfg.launchSpeed}
@@ -1286,6 +1370,7 @@ function App() {
                 set={(v) => config("search", v)}
                 unit="s"
               />
+              <WaypointEditor scene={scene} commit={commit} />
               <p className="hint">
                 Pink line: patrol route. Lime line: A* path. The NPC checks
                 distance, viewing angle and obstacles.
@@ -1331,6 +1416,20 @@ function App() {
                 min={1}
                 max={12}
                 set={(v) => config("height", v)}
+              />
+              <Control
+                title="Camera offset X"
+                value={cfg.offsetX}
+                min={-5}
+                max={5}
+                set={(v) => config("offsetX", v)}
+              />
+              <Control
+                title="Camera offset Z"
+                value={cfg.offsetZ}
+                min={-5}
+                max={5}
+                set={(v) => config("offsetZ", v)}
               />
               <Control
                 title="Mouse sensitivity"
@@ -1595,53 +1694,7 @@ function App() {
                   </label>
                 ))}
               </div>
-              <div className="rule" />
-              <label>
-                PATROL WAYPOINTS <span>{scene.waypoints.length}</span>
-              </label>
-              {scene.waypoints.map((wp, i) => (
-                <div className="waypoint" key={i}>
-                  <span>POINT {i + 1}</span>
-                  {([0, 1] as const).map((axis) => (
-                    <input
-                      key={axis}
-                      aria-label={`Waypoint ${i + 1} ${axis ? "Z" : "X"}`}
-                      type="number"
-                      step="0.5"
-                      value={wp[axis]}
-                      onChange={(e) => {
-                        const n = e.target.valueAsNumber;
-                        if (Number.isFinite(n)) {
-                          const w = scene.waypoints.map(
-                            (v) => [...v] as [number, number],
-                          );
-                          w[i][axis] = n;
-                          commit({ ...scene, waypoints: w });
-                        }
-                      }}
-                    />
-                  ))}
-                  <button
-                    disabled={scene.waypoints.length <= 2}
-                    onClick={() =>
-                      commit({
-                        ...scene,
-                        waypoints: scene.waypoints.filter((_, j) => j !== i),
-                      })
-                    }
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                className="secondary"
-                onClick={() =>
-                  commit({ ...scene, waypoints: [...scene.waypoints, [0, 0]] })
-                }
-              >
-                ADD WAYPOINT +
-              </button>
+              <WaypointEditor scene={scene} commit={commit} />
               <div className="rule" />
               <label>
                 EXAMPLE LEVELS <span>03</span>
