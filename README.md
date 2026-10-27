@@ -1,19 +1,17 @@
 # Game Mechanics Lab
 
-A work-in-progress browser-based 3D game mechanics playground built with React, TypeScript, Vite, Three.js, React Three Fiber and Rapier.
+A browser-based 3D playground for interactive game mechanics, made with React, TypeScript, Vite, Three.js, React Three Fiber and Rapier.
 
-## Current work
+## Features
 
-- Physics scene with cubes, spheres, capsules, gravity, mass, friction, restitution and projectile spawning.
-- Physics-based character movement with keyboard and touch controls.
-- NPC finite-state behavior with distance, field-of-view and line-of-sight checks, A* grid pathfinding and patrol waypoints.
-- Orbit, first-person, follow, top-down and isometric camera modes.
-- A basic level editor with selection, numeric transforms, duplication, deletion, undo/redo, player spawn, waypoints, example scenes, local save/load and JSON import/export.
-- Six experiment entry points using the shared simulation.
+- Physics simulation with cubes, spheres, capsules, adjustable gravity, friction, restitution, damping, mass, launch and drop parameters, presets, collider debug view, velocity vectors and recorded trails.
+- Physics-based character movement with walking, sprinting, jumping, coyote time, jump buffering, optional double jump, keyboard and touch controls.
+- Two NPCs with finite-state behavior, distance and field-of-view detection, obstacle line-of-sight checks, A* grid pathfinding, patrol waypoints, pursuit and search.
+- Five camera modes, adjustable field of view, distance, height, sensitivity, clipping and follow speed.
+- Level editor with transform gizmos and numeric transforms, selection, duplication, deletion, undo/redo, player spawn, waypoints, example scenes, local save/load and validated JSON import/export.
+- Six interactive experiment scenarios, actual simulation measurements, render quality controls and contextual help.
 
-These features compile but have **not been verified in a browser**. The project is not yet complete against its full specification. In particular, visual object gizmos, complete character mechanics, full physics telemetry/debug tools, robust camera interactions, individual dedicated experiment scenes, and comprehensive browser and mobile testing remain outstanding. Do not deploy this branch as a finished product.
-
-## Local development
+## Development
 
 ```sh
 npm ci
@@ -22,8 +20,19 @@ npm run test
 npm run build
 ```
 
-Open the Vite URL shown in the terminal. Move with WASD, jump with Space and sprint with Shift. Drag the viewport to orbit and scroll to zoom. Scene data is stored in browser local storage or exported as JSON.
+To run the browser tests, install Playwright's Chromium and then run:
+
+```sh
+npx playwright install chromium
+npm run test:e2e
+```
+
+Move with WASD, jump with Space and sprint with Shift. Drag the viewport to orbit and scroll to zoom. Save stores a scene and settings in browser local storage; Export saves a portable JSON file.
+
+## Current limitations
+
+The experiments are scenario variants built on a shared simulation engine. NPC pathfinding uses a grid and axis-aligned approximations for obstacles. Touch controls and transform gizmos have been tested in a simulated mobile/desktop browser but still need testing on physical devices. The automated tests cover core flows but are not exhaustive, and some advanced controls and visualizations in the original specification are not yet available.
 
 ## Deployment
 
-The Vite base path targets `/Game-Mechanics-Lab/`. A GitHub Actions workflow is included for GitHub Pages when the repository is configured to use Actions as the Pages source and the work is ready to merge. Deployment has not been verified.
+The Vite base path targets `/Game-Mechanics-Lab/`. The GitHub Pages workflow runs unit and browser tests and builds the site after a push to `main`. The repository must have Pages configured to use GitHub Actions. Deployment is not yet verified.
